@@ -11,13 +11,17 @@ import java.util.stream.IntStream;
 
 
 /**
+ * Java implementation of Local Outlier Factor algorithm by [Markus M. Breunig](http://www.dbs.ifi.lmu.de/Publikationen/Papers/LOF.pdf). 
+ * The implementation accepts a collection `double[]` arrays, where each array of doubles corresponds to an instance.  
  * @author Bostjan Kaluza
  * @date June 10, 2016
  */
- 
- 
 public class LOF {
  
+	public static enum Distance{
+		ABS_RELATIVE, EUCLIDIAN;
+	}
+	
 	/** The training instances  */
 	private Collection<double[]> trainInstances;
 	private int numAttributes, numInstances;
@@ -34,13 +38,20 @@ public class LOF {
 	/** The maximum values training instances */
 	private double [] maxTrain;
 	
+	private Distance distanceMeasure;
+	
+	public LOF(Collection<double[]> trainCollection){
+		this(trainCollection, Distance.EUCLIDIAN);
+	}
+	
 	/**
 	 * @param trainCollection
 	 */
-	public LOF(Collection<double[]> trainCollection){
+	public LOF(Collection<double[]> trainCollection, Distance distanceMeasure){
 		
 		// get training data dimensions
 		numInstances = trainCollection.size();
+		this.distanceMeasure = distanceMeasure;
 		
 		double[] first = trainCollection.iterator().next();
 		numAttributes = first.length;
@@ -79,12 +90,13 @@ public class LOF {
 				distTable[i][j] = getDistance(instance1, instance2);
 				j++;
 			}
+			if(i == j)
+				distTable[i][j] = -1;
 			i++;
 		}
-		
 	}
 	
-
+	
 	/**
 	 * Returns neighbors for the new example.
 	 * @param testInstance
@@ -139,6 +151,14 @@ public class LOF {
 	 * @return
 	 */
 	public double[] getTrainingScores(int kNN){
+		
+		// update the table with distances among training instances and a fake test instance
+		for(int i = 0; i < numInstances; i++){
+			distTable[i][numInstances] = Double.MAX_VALUE;
+			distSorted[i] = sortedIndices(distTable[i]);
+			distTable[numInstances][i] = Double.MAX_VALUE;
+		}	
+		
 		double[] res = new double[numInstances];
 		for(int idx = 0; idx < numInstances; idx++){
 			res[idx] = getLofIdx(idx, kNN);
@@ -147,6 +167,7 @@ public class LOF {
 	}
 	
 	private double getLofIdx(int index, int kNN){
+		
 		// get the number of nearest neighbors for the current test instance:
 		int numNN = getNNCount(kNN, index);
 
@@ -169,6 +190,7 @@ public class LOF {
 			distTable[numInstances][i] = distTable[i][numInstances];
 			i++;
 		}
+		distTable[numInstances][numInstances] = -1;
 		
 		// sort the distances
 		for (i = 0; i < numInstances + 1; i++) {
@@ -178,17 +200,33 @@ public class LOF {
  
 	private double getDistance(double[] first, double[] second) {
 
-		// calculate Euclidian distance
+		// calculate absolute relative distance
 		double distance = 0;
- 
-		for (int i = 0; i < this.numAttributes; i++) {  
-			distance += Math.abs(first[i] - second[i]) / (maxTrain[i] - minTrain[i]);
+		
+		switch(distanceMeasure){
+		
+			case ABS_RELATIVE:
+				for (int i = 0; i < this.numAttributes; i++) {  
+					distance += Math.abs(first[i] - second[i]) / (maxTrain[i] - minTrain[i]);
+				}
+		
+			case EUCLIDIAN:
+				for (int i = 0; i < this.numAttributes; i++) {  
+					distance += Math.pow(first[i] - second[i], 2);
+				}
+				distance = Math.sqrt(distance);
+
+			default:
+				break;
+			
 		}
  
 		return distance;
 	}
 	
 	private double getReachDistance(int kNN, int firstIndex, int secondIndex) {
+		
+		// max({distance to k-th nn of second}, distance(first, second))
 		
 		double reachDist = distTable[firstIndex][secondIndex];
 		
@@ -202,10 +240,10 @@ public class LOF {
 	
 	private int getNNCount(int kNN, int instIndex) {
  
-		int numNN = kNN + 1;
+		int numNN = kNN;
 		
 		// if there are more neighbors with the same distance, take them too
-		for (int i = kNN; i < this.numInstances - 1; i++) {
+		for (int i = kNN; i < distTable.length - 1; i++) {
 			if (distTable[instIndex][distSorted[instIndex][i]] == distTable[instIndex][distSorted[instIndex][i+1]])
 				numNN++;
 			else
@@ -222,7 +260,7 @@ public class LOF {
  
 		double lrd = 0;
  
-		for (int i = 1; i < numNN; i++) {
+		for (int i = 1; i <= numNN; i++) {
 			lrd += getReachDistance(kNN, instIndex, distSorted[instIndex][i]);
 		}
 		lrd = (lrd == 0) ? 0 : numNN / lrd;
@@ -259,6 +297,8 @@ public class LOF {
 		data.add(new double[]{2, 0});
 		
 		LOF model = new LOF(data);
+		
+		
 		System.out.println("LOF values on training examples");
 		double[] scores = model.getTrainingScores(kNN);
 		for(int i = 0; i < scores.length; i++){

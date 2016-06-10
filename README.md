@@ -6,7 +6,7 @@ Java implementation of Local Outlier Factor algorithm by [Markus M. Breunig](htt
 Example 1: Train and test data
 --------
 
-The following example illustrates the simple use case of computing LOF values of several instances (e.g. `[0,0],[5,5],[10,10] and [-8,-8]`) based on the `data` variable that we pass to the `LOF` constructor.
+The following example illustrates the simple use case of computing LOF value of an example based on the training data. First, we initialize `LOF` constructor by passing `data` variable. Next, we call `getScore(double[] example, int kNN)` with an array of doubles and kNN value.  
 ```
 ArrayList<double[]> data = new ArrayList<double[]>();
 	data.add(new double[]{0, 0});
@@ -30,9 +30,9 @@ System.out.println(model.getScore(new double[]{10, 4}, kNN));
 ```
 The output should be:
 ```
-0.9623049219687877
-1.0722222222222222
-4.575166479610924
+0.9439752132155199
+1.4115350452823745
+7.845854226211409
 ```
 
 Example 2: Get actual nearest neighbors
@@ -61,22 +61,22 @@ Example 3: Get LOF values for training data
 --------
 The get the LOF values for existing training data, simply call `getTrainingScores(int knn)` method:
 ```
-		double[] scores = model.getTrainingScores(kNN);
-		for(int i = 0; i < scores.length; i++){
-			System.out.println(Arrays.toString(data.get(i)) + "\t" + scores[i]);
-		}
+double[] scores = model.getTrainingScores(kNN);
+for(int i = 0; i < scores.length; i++){
+	System.out.println(Arrays.toString(data.get(i)) + "\t" + scores[i]);
+}
 ```
 The output should be:
 ```
-[0.0, 0.0]	1.4484905097167324
-[0.0, 1.0]	1.209851046698873
-[1.0, 0.0]	1.6198855905998761
-[1.0, 1.0]	0.8513010812399959
-[1.0, 2.0]	1.209851046698873
-[2.0, 1.0]	1.6198855905998761
-[2.0, 2.0]	1.4484905097167324
-[2.0, 0.0]	0.7579710144927536
-[2.0, 0.0]	0.7579710144927536
-[2.0, 0.0]	0.7579710144927536
-[2.0, 0.0]	0.7579710144927536
+[0.0, 0.0]	1.5237323873815085
+[0.0, 1.0]	1.196228163810988
+[1.0, 0.0]	1.071470776748656
+[1.0, 1.0]	1.2335968200610736
+[1.0, 2.0]	1.196228163810988
+[2.0, 1.0]	1.071470776748656
+[2.0, 2.0]	1.5237323873815085
+[2.0, 0.0]	0.9237025720677815
+[2.0, 0.0]	0.9237025720677815
+[2.0, 0.0]	0.9237025720677815
+[2.0, 0.0]	0.9237025720677815
 ```
