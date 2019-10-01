@@ -81,6 +81,11 @@ public class LOF {
 		// fill the table with distances among training instances
 	    distTable = new double[numInstances + 1][numInstances + 1];
 		distSorted = new int[numInstances + 1][numInstances + 1];
+		for (int i = 0; i < distSorted.length; i++) {
+			for (int j = 0; j < distSorted.length; j++) {
+				distSorted[i][j] = j;
+			}
+		}
 		
 	    int i = 0, j = 0;
 		for(double[] instance1 :trainInstances){
@@ -154,7 +159,7 @@ public class LOF {
 		// update the table with distances among training instances and a fake test instance
 		for(int i = 0; i < numInstances; i++){
 			distTable[i][numInstances] = Double.MAX_VALUE;
-			distSorted[i] = sortedIndices(distTable[i]);
+			sortedIndices(distTable[i], distSorted[i]);
 			distTable[numInstances][i] = Double.MAX_VALUE;
 		}	
 		
@@ -193,7 +198,7 @@ public class LOF {
 		
 		// sort the distances
 		for (i = 0; i < numInstances + 1; i++) {
-			distSorted[i] = sortedIndices(distTable[i]);
+			sortedIndices(distTable[i], distSorted[i]);
 	    }			
 	}
  
@@ -267,15 +272,8 @@ public class LOF {
 		return lrd;
 	}	
 
-	private int[] sortedIndices(double[] array){
-		int[] indices = new int[array.length];
-		for (int i = 0; i < array.length; i++) {
-			indices[i] = i;
-		}
-
+	private void sortedIndices(double[] array, int[] indices) {
 		quickSort(indices, (i1, i2) -> Double.compare(array[i1], array[i2]));
-
-		return indices;
 	}
 	
 	
