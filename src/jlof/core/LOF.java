@@ -7,7 +7,6 @@ import java.lang.Math;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.IntStream;
 
 
 /**
@@ -267,15 +266,16 @@ public class LOF {
  
 		return lrd;
 	}	
-	    
-	
 
-	
 	private int[] sortedIndices(double[] array){
-		int[] sortedIndices = IntStream.range(0, array.length)
-				.boxed().sorted(Comparator.comparingDouble(i -> array[i]))
-                .mapToInt(ele -> ele).toArray();
-		return sortedIndices;
+		int[] indices = new int[array.length];
+		for (int i = 0; i < array.length; i++) {
+			indices[i] = i;
+		}
+
+		quickSort(indices, (i1, i2) -> Double.compare(array[i1], array[i2]));
+
+		return indices;
 	}
 	
 	
@@ -345,5 +345,127 @@ public class LOF {
 
 		System.out.printf("Testing time: %.2f sec\n", Duration.between(testStartTime, Instant.now()).toMillis() / 1000.0);
 	}
-	
+
+	//-----------------------------------------
+	// int[] array sort with custom comparator
+	// This source code is copied from http://fastutil.di.unimi.it/ for now because the project currently
+	// does not use any build system (Maven, Gradle, ...) and there is no convenient way to add it as a library
+	// TODO: convert to a Maven/Gradle project, add it.unimi.dsi fastutils as dependency and use
+	//         IntArrays.quickSort(indices, (i1, i2) -> Double.compare(array[i1], array[i2]));
+	//-----------------------------------------
+
+	@FunctionalInterface
+	private interface IntComparator extends Comparator<Integer> {
+		int compare(int var1, int var2);
+
+		default int compare(Integer ok1, Integer ok2) {
+			return this.compare(ok1, ok2);
+		}
+	}
+
+	private static void swap(int[] x, int a, int b) {
+		int t = x[a];
+		x[a] = x[b];
+		x[b] = t;
+	}
+
+	private static void swap(int[] x, int a, int b, int n) {
+		for(int i = 0; i < n; ++b) {
+			swap(x, a, b);
+			++i;
+			++a;
+		}
+
+	}
+
+	private static int med3(int[] x, int a, int b, int c, IntComparator comp) {
+		int ab = comp.compare(x[a], x[b]);
+		int ac = comp.compare(x[a], x[c]);
+		int bc = comp.compare(x[b], x[c]);
+		return ab < 0 ? (bc < 0 ? b : (ac < 0 ? c : a)) : (bc > 0 ? b : (ac > 0 ? c : a));
+	}
+
+	private static void selectionSort(int[] a, int from, int to, IntComparator comp) {
+		for(int i = from; i < to - 1; ++i) {
+			int m = i;
+
+			int u;
+			for(u = i + 1; u < to; ++u) {
+				if (comp.compare(a[u], a[m]) < 0) {
+					m = u;
+				}
+			}
+
+			if (m != i) {
+				u = a[i];
+				a[i] = a[m];
+				a[m] = u;
+			}
+		}
+
+	}
+
+	private static void quickSort(int[] x, int from, int to, IntComparator comp) {
+		int len = to - from;
+		if (len < 16) {
+			selectionSort(x, from, to, comp);
+		} else {
+			int m = from + len / 2;
+			int l = from;
+			int n = to - 1;
+			int v;
+			if (len > 128) {
+				v = len / 8;
+				l = med3(x, from, from + v, from + 2 * v, comp);
+				m = med3(x, m - v, m, m + v, comp);
+				n = med3(x, n - 2 * v, n - v, n, comp);
+			}
+
+			m = med3(x, l, m, n, comp);
+			v = x[m];
+			int a = from;
+			int b = from;
+			int c = to - 1;
+			int d = c;
+
+			while(true) {
+				int s;
+				while(b > c || (s = comp.compare(x[b], v)) > 0) {
+					for(; c >= b && (s = comp.compare(x[c], v)) >= 0; --c) {
+						if (s == 0) {
+							swap(x, c, d--);
+						}
+					}
+
+					if (b > c) {
+						s = Math.min(a - from, b - a);
+						swap(x, from, b - s, s);
+						s = Math.min(d - c, to - d - 1);
+						swap(x, b, to - s, s);
+						if ((s = b - a) > 1) {
+							quickSort(x, from, from + s, comp);
+						}
+
+						if ((s = d - c) > 1) {
+							quickSort(x, to - s, to, comp);
+						}
+
+						return;
+					}
+
+					swap(x, b++, c--);
+				}
+
+				if (s == 0) {
+					swap(x, a++, b);
+				}
+
+				++b;
+			}
+		}
+	}
+
+	private static void quickSort(int[] x, IntComparator comp) {
+		quickSort(x, 0, x.length, comp);
+	}
 }
