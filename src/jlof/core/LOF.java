@@ -4,9 +4,12 @@
 package jlof.core;
 
 import java.lang.Math;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 
@@ -317,7 +320,33 @@ public class LOF {
 		for(double[] n : neighbors){
 			System.out.println(Arrays.toString(n));
 		}
-			
+
+		System.out.println();
+		System.out.println("Running for a big dataset");
+
+		Random rand = new Random(42);
+		ArrayList<double[]> bigTrainingData = new ArrayList<>();
+		for (int i = 0; i < 2000; i++) {
+			bigTrainingData.add(new double[]{rand.nextInt(5), rand.nextInt(5)});
+		}
+		ArrayList<double[]> bigTestData = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			bigTestData.add(new double[]{rand.nextInt(8), rand.nextInt(8)});
+		}
+
+		Instant trainingStartTime = Instant.now();
+
+		LOF bigModel = new LOF(bigTrainingData);
+		bigModel.getTrainingScores(kNN);
+
+		System.out.printf("Training time: %.2f sec\n", Duration.between(trainingStartTime, Instant.now()).toMillis() / 1000.0);
+		Instant testStartTime = Instant.now();
+
+		for (double[] sample : bigTestData) {
+			bigModel.getScore(sample, kNN);
+		}
+
+		System.out.printf("Testing time: %.2f sec\n", Duration.between(testStartTime, Instant.now()).toMillis() / 1000.0);
 	}
 	
 }
