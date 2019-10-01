@@ -6,10 +6,7 @@ package jlof.core;
 import java.lang.Math;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.IntStream;
 
 
@@ -276,7 +273,7 @@ public class LOF {
 	
 	private int[] sortedIndices(double[] array){
 		int[] sortedIndices = IntStream.range(0, array.length)
-                .boxed().sorted((i, j) -> (int)(1000*(array[i] - array[j])))
+				.boxed().sorted(Comparator.comparingDouble(i -> array[i]))
                 .mapToInt(ele -> ele).toArray();
 		return sortedIndices;
 	}
